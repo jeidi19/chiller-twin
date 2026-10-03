@@ -1,0 +1,37 @@
+# Same machine as default.yaml, longer run, with faults appearing over time.
+# Use configs like this one to generate labelled datasets for the ML phase.
+
+simulation:
+  duration_s: 21600       # 6 h
+  dt_s: 1.0
+  sample_period_s: 10.0
+  sensor_noise_c: 0.1
+  seed: 7
+
+chiller:
+  ambient_temp_c: 25.0
+  cell_heat_capacity_j_per_k: 50000.0
+  product_heat_capacity_j_per_k: 70000.0
+  ua_env_w_per_k: 15.0
+  ua_product_w_per_k: 30.0
+  ua_door_w_per_k: 150.0
+  cooling_capacity_w: 5000.0
+  compressor_power_w: 2000.0
+
+controller:
+  setpoint_c: -18.0
+  hysteresis_c: 2.0
+  min_on_time_s: 60.0
+  min_off_time_s: 120.0
+
+initial:
+  cell_temp_c: 20.0
+  product_temp_c: 70.0
+
+door_events:
+  - { start_s: 3600, duration_s: 30 }
+  - { start_s: 10800, duration_s: 45 }
+
+faults:
+  # kind: refrigerant_leak | compressor_wear | door_gasket | sensor_drift
+  - { kind: refrigerant_leak, start_s: 7200, ramp_s: 7200, max_severity: 0.8 }

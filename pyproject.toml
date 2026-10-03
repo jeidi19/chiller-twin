@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chiller-twin"
+version = "0.1.0"
+description = "Digital twin of a blast chiller with an IIoT pipeline (OPC UA, MQTT, InfluxDB, Grafana) and ML-based fault detection."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Jacopo De Donà" }]
+dependencies = [
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+# Phase 2 (OPC UA / MQTT / InfluxDB) and phase 3 (ML) dependencies are added
+# when those components are built:
+#   opcua  = ["asyncua"]
+#   mqtt   = ["paho-mqtt"]
+#   influx = ["influxdb-client"]
+#   ml     = ["pandas", "scikit-learn"]
+
+[tool.setuptools.packages.find]
+include = ["simulator*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
