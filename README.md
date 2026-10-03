@@ -41,13 +41,13 @@ Infrastructure only (for now): `cp .env.example .env && docker compose up -d`.
 | `sensor_drift` | none — the sensor reads too high | cell held colder than needed, more energy |
 
 ## Roadmap
-- [ ] **Phase 1** — thermal model, controller, fault injection, tests
+- [x] **Phase 1** — thermal model, controller, fault injection, tests
 - [ ] **Phase 2** — OPC UA + MQTT + InfluxDB + Grafana, one-command demo with `docker compose up`
 - [ ] **Phase 3** — labelled datasets, Isolation Forest, anomaly score and alerts on the dashboard
 - [ ] **Phase 4** — control logic in IEC 61131-3 Structured Text on OpenPLC; fault classification
 
 ## How AI was used
-Developed with the help of Claude (Anthropic) for scaffolding, tests, infrastructure configuration and documentation. The thermal model, the control logic and the ML feature design were developed and validated by me.
+The thermal model and the ML feature design were developed and validated by me; scaffolding, the compressor controller, tests, infrastructure configuration and documentation were written with the help of Claude (Anthropic).
 
 ## License
 MIT
