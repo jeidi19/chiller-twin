@@ -1,0 +1,17 @@
+# InfluxDB datasource, Flux language. $VARIABLES are expanded by Grafana from the
+# container environment (see docker-compose.yml), so no secret is stored here.
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    uid: influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: $INFLUXDB_ORG
+      defaultBucket: $INFLUXDB_BUCKET
+    secureJsonData:
+      token: $INFLUXDB_TOKEN
