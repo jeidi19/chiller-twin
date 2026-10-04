@@ -277,7 +277,7 @@
             "type": "influxdb",
             "uid": "influxdb"
           },
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"cell_temp_c\" or r._field == \"product_temp_c\" or r._field == \"active_setpoint_c\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])"
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"cell_temp_c\" or r._field == \"product_temp_c\" or r._field == \"active_setpoint_c\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])\n  // one column per quantity, named after the field: overrides match by name\n  |> group()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"])"
         }
       ],
       "fieldConfig": {
@@ -288,9 +288,62 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "cell_temp_c"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Cell"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "product_temp_c"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Product core"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "active_setpoint_c"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Setpoint"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#bbbbbb"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
               {
                 "id": "custom.lineStyle",
                 "value": {
@@ -315,11 +368,22 @@
         "y": 9,
         "w": 16,
         "h": 10
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       }
     },
     {
       "type": "timeseries",
-      "title": "Compressor power",
+      "title": "Compressor power (average)",
       "targets": [
         {
           "refId": "A",
@@ -327,7 +391,7 @@
             "type": "influxdb",
             "uid": "influxdb"
           },
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"compressor_power_w\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])"
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"compressor_power_w\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])\n  // one column per quantity, named after the field: overrides match by name\n  |> group()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"])"
         }
       ],
       "fieldConfig": {
@@ -337,7 +401,27 @@
             "fillOpacity": 20
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "compressor_power_w"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Average power"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          }
+        ]
       },
       "id": 6,
       "datasource": {
@@ -349,6 +433,18 @@
         "y": 9,
         "w": 8,
         "h": 10
+      },
+      "description": "Mean over each time window: the compressor is either off or at full power, so the average shows the energy actually drawn.",
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       }
     },
     {
@@ -361,7 +457,7 @@
             "type": "influxdb",
             "uid": "influxdb"
           },
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"compressor_on\" or r._field == \"door_open\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> toInt()\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])"
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.machine_id == \"${machine}\")\n  |> filter(fn: (r) => r._field == \"compressor_on\" or r._field == \"door_open\")\n  |> group(columns: [\"_field\"])\n  |> sort(columns: [\"_time\"])\n  |> toInt()\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])\n  // one column per quantity, named after the field: overrides match by name\n  |> group()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"])"
         }
       ],
       "fieldConfig": {
@@ -394,7 +490,32 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "compressor_on"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Compressor"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "door_open"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Door"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showValue": "never",
