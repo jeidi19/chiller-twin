@@ -22,8 +22,12 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG}
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
-    volumes:
-      - influxdb-data:/var/lib/influxdb2
+    # Demo: data and config live in memory, so every restart starts from an empty
+    # database (setup runs again with the values from .env). To keep the history,
+    # replace tmpfs with a named volume mounted on /var/lib/influxdb2.
+    tmpfs:
+      - /var/lib/influxdb2
+      - /etc/influxdb2
 
   grafana:
     image: grafana/grafana:11.2.0
@@ -77,5 +81,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  influxdb-data:
   grafana-data:

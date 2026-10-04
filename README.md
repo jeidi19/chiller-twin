@@ -33,7 +33,8 @@ scripts/e2e_check.sh              # optional: waits for data in InfluxDB, checks
 Open Grafana on http://localhost:3000 (user `admin`, password `GRAFANA_PASSWORD` from `.env`),
 dashboard *Chiller Twin*. The simulator runs `configs/faults_example.yaml` at 60× speed in a loop:
 a 6 h batch lasts 6 minutes, and a refrigerant leak starts after about 2 minutes (see the
-*Active fault* panel). The OPC UA server is also reachable from any client (e.g. UaExpert) on
+*Active fault* panel). InfluxDB keeps its data in memory: every restart of the stack starts from an empty database, so
+the graphs never mix runs. The OPC UA server is also reachable from any client (e.g. UaExpert) on
 `opc.tcp://localhost:4840/chiller-twin/`, where the setpoint can be written.
 
 | Optional variable (`.env`) | Default | Meaning |
