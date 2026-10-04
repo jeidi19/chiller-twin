@@ -32,7 +32,12 @@ python -m simulator --config configs/faults_example.yaml --out data/run.csv
 ```
 OPC UA server (phase 2, in progress): `python -m simulator serve --config configs/faults_example.yaml --speed 60`.
 
-Full pipeline (phase 2, in progress): `cp .env.example .env && docker compose up -d --build`.
+Full pipeline (phase 2, in progress):
+```bash
+cp .env.example .env && docker compose up -d --build
+scripts/e2e_check.sh          # waits for data in InfluxDB, checks Grafana provisioning
+```
+Grafana on http://localhost:3000 (user `admin`, password `GRAFANA_PASSWORD` from `.env`), dashboard *Chiller Twin*.
 
 ## Faults
 | Fault | Effect on the plant | What should be visible in the data |
