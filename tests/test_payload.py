@@ -11,8 +11,6 @@ import pytest
 from gateway import payload
 from gateway.payload import to_payload
 
-pytestmark = pytest.mark.xfail(raises=NotImplementedError, strict=True)
-
 TS = datetime(2026, 10, 3, 12, 0, 5, tzinfo=UTC)
 VALUES = {
     "cell_temp_c": -17.8,
