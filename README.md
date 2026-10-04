@@ -17,8 +17,8 @@ Refrigeration machines rarely break suddenly: a refrigerant leak or a worn compr
 
 | Component | Status | Tech |
 |---|---|---|
-| Thermal model, controller, fault injection | 🚧 phase 1 | Python, NumPy |
-| OPC UA server, MQTT gateway, collector | ⏳ phase 2 | asyncua, paho-mqtt, Mosquitto, InfluxDB |
+| Thermal model, controller, fault injection | ✅ phase 1 | Python, NumPy |
+| OPC UA server, MQTT gateway, collector | 🚧 phase 2 | asyncua, paho-mqtt, Mosquitto, InfluxDB |
 | Dashboard as code | ⏳ phase 2 | Grafana |
 | Anomaly detection | ⏳ phase 3 | scikit-learn |
 | Control logic in Structured Text | ⏳ phase 4 | OpenPLC, Modbus TCP |
@@ -30,7 +30,9 @@ pip install -e ".[dev]"
 pytest
 python -m simulator --config configs/faults_example.yaml --out data/run.csv
 ```
-Infrastructure only (for now): `cp .env.example .env && docker compose up -d`.
+OPC UA server (phase 2, in progress): `python -m simulator serve --config configs/faults_example.yaml --speed 60`.
+
+Full pipeline (phase 2, in progress): `cp .env.example .env && docker compose up -d --build`.
 
 ## Faults
 | Fault | Effect on the plant | What should be visible in the data |

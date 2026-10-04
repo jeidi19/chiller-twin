@@ -17,18 +17,17 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "chiller-twin[opcua,mqtt,influx]",
     "pytest>=8.0",
     "ruff>=0.6",
 ]
-# Phase 2 (OPC UA / MQTT / InfluxDB) and phase 3 (ML) dependencies are added
-# when those components are built:
-#   opcua  = ["asyncua"]
-#   mqtt   = ["paho-mqtt"]
-#   influx = ["influxdb-client"]
-#   ml     = ["pandas", "scikit-learn"]
+opcua = ["asyncua>=1.1"]
+mqtt = ["paho-mqtt>=2.0"]
+influx = ["influxdb-client>=1.40"]
+# Phase 3: ml = ["pandas", "scikit-learn"]
 
 [tool.setuptools.packages.find]
-include = ["simulator*"]
+include = ["simulator*", "gateway*", "collector*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

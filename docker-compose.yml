@@ -1,6 +1,7 @@
-# Infrastructure of the IIoT pipeline. Application services (simulator with OPC UA
-# server, gateway, collector, ML scorer) are added in phase 2 and 3.
-#   docker compose up -d   →   Grafana on http://localhost:3000, InfluxDB on :8086
+# IIoT pipeline: simulator (OPC UA server) → gateway → MQTT → collector → InfluxDB → Grafana.
+#   cp .env.example .env && docker compose up -d --build
+#   Grafana on http://localhost:3000, InfluxDB on :8086, OPC UA on opc.tcp://localhost:4840
+# The ML scorer is added in phase 3.
 
 services:
   mosquitto:
@@ -34,6 +35,41 @@ services:
       - grafana-data:/var/lib/grafana
     depends_on:
       - influxdb
+
+  simulator:
+    build: .
+    command: >-
+      python -m simulator serve --config configs/${SIM_CONFIG:-faults_example.yaml}
+      --speed ${SIM_SPEED:-60} --loop
+    ports:
+      - "4840:4840"
+    restart: unless-stopped
+
+  gateway:
+    build: .
+    command: python -m gateway
+    environment:
+      OPCUA_ENDPOINT: opc.tcp://simulator:4840/chiller-twin/
+      MQTT_HOST: mosquitto
+      MACHINE_ID: ${MACHINE_ID:-bc-01}
+    depends_on:
+      - simulator
+      - mosquitto
+    restart: unless-stopped
+
+  collector:
+    build: .
+    command: python -m collector
+    environment:
+      MQTT_HOST: mosquitto
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET}
+    depends_on:
+      - mosquitto
+      - influxdb
+    restart: unless-stopped
 
 volumes:
   influxdb-data:

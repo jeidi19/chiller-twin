@@ -42,3 +42,9 @@ def test_labels_follow_fault_schedule():
 def test_door_events_recorded():
     records = run(CONFIG, step_fn=toy_step)
     assert any(r["door_open"] for r in records)
+
+
+def test_iter_run_streams_the_same_records_as_run():
+    from simulator.simulation import iter_run
+
+    assert list(iter_run(CONFIG, step_fn=toy_step)) == run(CONFIG, step_fn=toy_step)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 
 import numpy as np
 
@@ -22,23 +22,32 @@ RECORD_FIELDS = (
     "door_open",
     "label",
 )
+# What the machine publishes (OPC UA → MQTT → InfluxDB): every record field except time.
+TELEMETRY_FIELDS = RECORD_FIELDS[1:]
 
 
 def door_is_open(events: tuple[DoorEvent, ...], t_s: float) -> bool:
     return any(e.start_s <= t_s < e.start_s + e.duration_s for e in events)
 
 
-def run(config: SimulationConfig, step_fn: StepFn = model.step) -> list[dict]:
-    """Run the simulation and return one record every ``sample_period_s``.
+def iter_run(
+    config: SimulationConfig,
+    step_fn: StepFn = model.step,
+    controller: HysteresisController | None = None,
+) -> Iterator[dict]:
+    """Run the simulation lazily, yielding one record every ``sample_period_s``.
 
     ``cell_temp_c`` is the *measured* value (noise + sensor faults), as a real
     machine would publish it; ``label`` is the ground truth used to train/evaluate ML.
+
+    Pass your own ``controller`` to change its parameters while the simulation runs
+    (e.g. a setpoint written by a remote client over OPC UA).
     """
     rng = np.random.default_rng(config.seed)
-    controller = HysteresisController(config.controller)
+    if controller is None:
+        controller = HysteresisController(config.controller)
     state = model.PlantState(config.initial.cell_temp_c, config.initial.product_temp_c)
 
-    records: list[dict] = []
     steps = int(round(config.duration_s / config.dt_s))
     sample_every = max(1, int(round(config.sample_period_s / config.dt_s)))
 
@@ -55,17 +64,18 @@ def run(config: SimulationConfig, step_fn: StepFn = model.step) -> list[dict]:
         out = step_fn(state, inputs, params, config.dt_s)
 
         if i % sample_every == 0:
-            records.append(
-                {
-                    "t_s": t,
-                    "cell_temp_c": round(measured, 3),
-                    "product_temp_c": round(state.product_temp_c, 3),
-                    "compressor_on": int(inputs.compressor_on),
-                    "compressor_power_w": round(out.compressor_power_w, 1),
-                    "door_open": int(inputs.door_open),
-                    "label": active_label(config.faults, t),
-                }
-            )
+            yield {
+                "t_s": t,
+                "cell_temp_c": round(measured, 3),
+                "product_temp_c": round(state.product_temp_c, 3),
+                "compressor_on": int(inputs.compressor_on),
+                "compressor_power_w": round(out.compressor_power_w, 1),
+                "door_open": int(inputs.door_open),
+                "label": active_label(config.faults, t),
+            }
         state = out.state
 
-    return records
+
+def run(config: SimulationConfig, step_fn: StepFn = model.step) -> list[dict]:
+    """Run the whole simulation and return all the records (see ``iter_run``)."""
+    return list(iter_run(config, step_fn))
