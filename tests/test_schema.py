@@ -23,7 +23,7 @@ def test_round_trip_keeps_every_value():
     assert measurement
     assert tags["machine_id"] == "bc-01"
     assert time == TS
-    for name in ("cell_temp_c", "product_temp_c", "compressor_power_w"):
+    for name in ("cell_temp_c", "product_temp_c", "active_setpoint_c", "compressor_power_w"):
         assert isinstance(fields[name], float)
         assert fields[name] == pytest.approx(VALUES[name])
     for name in ("compressor_on", "door_open"):

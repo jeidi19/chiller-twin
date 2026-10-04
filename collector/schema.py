@@ -11,8 +11,8 @@ Contract:
   - a measurement name of your choice,
   - the tag ``machine_id`` taken from the topic,
   - the time taken from the payload ``"ts"`` (not the arrival time),
-  - temperatures and power as float fields, ``compressor_on`` and ``door_open`` as
-    fields (bool or 0/1, your choice),
+  - temperatures (including ``active_setpoint_c``) and power as float fields,
+    ``compressor_on`` and ``door_open`` as fields (bool or 0/1, your choice),
   - ``label`` as a tag *or* a field: your choice, be ready to defend it.
 
 Useful: ``Point("name").tag(k, v).field(k, v).time(dt)``.

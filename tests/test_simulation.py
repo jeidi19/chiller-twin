@@ -48,3 +48,16 @@ def test_iter_run_streams_the_same_records_as_run():
     from simulator.simulation import iter_run
 
     assert list(iter_run(CONFIG, step_fn=toy_step)) == run(CONFIG, step_fn=toy_step)
+
+
+def test_records_carry_the_setpoint_in_use():
+    from simulator.control import HysteresisController
+    from simulator.simulation import iter_run
+
+    controller = HysteresisController(CONFIG.controller)
+    records = iter_run(CONFIG, step_fn=toy_step, controller=controller)
+    first = next(records)
+    controller.params = replace(controller.params, setpoint_c=-25.0)
+    second = next(records)
+    assert first["active_setpoint_c"] == CONFIG.controller.setpoint_c
+    assert second["active_setpoint_c"] == -25.0

@@ -1,41 +1,36 @@
 """OPC UA information model of the blast chiller: which nodes a client sees.
 
->>> TODO (Jacopo): implement ``build_address_space()``. It is the OPC UA equivalent of
->>> choosing the variables of a Carel controller: names, types, units and what a remote
->>> client may change. The tests in ``tests/test_opcua_model.py`` are ``xfail`` and
->>> start passing when it is done (then remove their ``pytestmark``).
+The machine is one Object, ``Chiller``, under the standard ``Objects`` folder. Clients
+find its variables by browsing it, so they need no fixed addresses as with Modbus
+registers.
 
 Contract (the server, the gateway and the tests rely on it):
 
-- one Object with BrowseName ``Chiller`` under the standard ``Objects`` folder;
-- for every name in ``TELEMETRY_FIELDS`` one Variable *somewhere below* ``Chiller``
-  (you choose the folders) whose BrowseName is exactly that name, in namespace ``idx``;
-- data types: ``Double`` for temperatures and power, ``Boolean`` for ``compressor_on``
-  and ``door_open``, ``String`` for ``label``;
+- for every name in ``TELEMETRY_FIELDS`` one Variable below ``Chiller`` whose
+  BrowseName is exactly that name, in namespace ``idx`` (the gateway matches by name,
+  also inside sub-folders);
+- data types: ``Double`` for temperatures (including ``active_setpoint_c``) and power,
+  ``Boolean`` for ``compressor_on`` and ``door_open``, ``String`` for ``label``;
 - telemetry is read-only for clients;
-- one writable ``Double`` Variable for the controller setpoint (°C), initialised with
-  ``config.controller.setpoint_c``: the server applies what a client writes there.
+- ``setpoint_c`` is the only writable node: the setpoint *command* (°C), initialised
+  with ``config.controller.setpoint_c``.
 
-Useful asyncua calls (all awaited): ``parent.add_object(idx, name)``,
-``parent.add_folder(idx, name)``, ``parent.add_variable(idx, name, value,
-varianttype=ua.VariantType.Double)``, ``node.set_writable()``,
-``node.add_property(...)``. Start from ``server.nodes.objects``.
+Design notes:
 
-Questions worth thinking about (interviewers ask them):
-- Why expose an OPC UA *model* (objects, folders, types) instead of a flat list of
-  tags like Modbus registers? What does a client gain from browsing it?
-- How would you publish engineering units (``EUInformation``) and value ranges?
-- Which values should a remote client be allowed to write, and what must the server
-  check before accepting them (range, permissions, machine state)?
-- ``label`` is ground truth that a real machine would not know: is it right to put it
-  in the address space? How would you separate it in a real plant?
+- Requested vs actual value: ``setpoint_c`` is what a client asks for,
+  ``active_setpoint_c`` is what the controller is using. The server applies a request
+  only if it is in range (``opcua_server.apply_setpoint``); otherwise it resets the
+  command to the active value, so a client can see that the write was rejected.
+- ``label`` is ground truth that only exists because this is a simulation: a real
+  machine does not know it has a fault. In a plant, labels come from maintenance
+  records and are joined with the data later.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from asyncua import Node, Server
+from asyncua import Node, Server, ua
 
 from simulator.config import SimulationConfig
 
@@ -52,4 +47,42 @@ class AddressSpace:
 
 async def build_address_space(server: Server, idx: int, config: SimulationConfig) -> AddressSpace:
     """Create the chiller nodes in namespace ``idx`` and return them."""
-    raise NotImplementedError("OPC UA information model not implemented yet: see the docstring.")
+    machine = await server.nodes.objects.add_object(idx, "Chiller")
+    measurements = await machine.add_folder(idx, "Measurements")
+    status = await machine.add_folder(idx, "Status")
+    parameters = await machine.add_folder(idx, "Parameters")
+    active_setpoint = await status.add_variable(
+        idx, "active_setpoint_c", config.controller.setpoint_c, varianttype=ua.VariantType.Double
+    )
+    cell_temp = await measurements.add_variable(
+        idx, "cell_temp_c", 0.0, varianttype=ua.VariantType.Double
+    )
+    product_temp = await measurements.add_variable(
+        idx, "product_temp_c", 0.0, varianttype=ua.VariantType.Double
+    )
+    compressor_on = await status.add_variable(
+        idx, "compressor_on", False, varianttype=ua.VariantType.Boolean
+    )
+    door_open = await status.add_variable(
+        idx, "door_open", False, varianttype=ua.VariantType.Boolean
+    )
+    compressor_power = await measurements.add_variable(
+        idx, "compressor_power_w", 0.0, varianttype=ua.VariantType.Double
+    )
+    label = await machine.add_variable(idx, "label", "", varianttype=ua.VariantType.String)
+    setpoint = await parameters.add_variable(
+        idx, "setpoint_c", config.controller.setpoint_c, varianttype=ua.VariantType.Double
+    )
+    await setpoint.set_writable()
+    return AddressSpace(
+        telemetry={
+            "active_setpoint_c": active_setpoint,
+            "cell_temp_c": cell_temp,
+            "product_temp_c": product_temp,
+            "compressor_on": compressor_on,
+            "door_open": door_open,
+            "compressor_power_w": compressor_power,
+            "label": label,
+        },
+        setpoint=setpoint,
+    )

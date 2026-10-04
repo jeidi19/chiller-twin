@@ -18,6 +18,7 @@ CONFIG = load_config(Path(__file__).parent.parent / "configs" / "default.yaml")
 TYPES = {
     "cell_temp_c": ua.VariantType.Double,
     "product_temp_c": ua.VariantType.Double,
+    "active_setpoint_c": ua.VariantType.Double,
     "compressor_on": ua.VariantType.Boolean,
     "compressor_power_w": ua.VariantType.Double,
     "door_open": ua.VariantType.Boolean,
@@ -41,7 +42,7 @@ async def stub_space():
         for name in TELEMETRY_FIELDS
     }
     setpoint = await chiller.add_variable(
-        idx, "setpoint_c", CONFIG.controller.setpoint_c, varianttype=ua.VariantType.Double
+        idx, "setpoint_command_c", CONFIG.controller.setpoint_c, varianttype=ua.VariantType.Double
     )
     await setpoint.set_writable()
     return AddressSpace(telemetry, setpoint)
@@ -52,6 +53,7 @@ def test_publish_record_casts_to_the_model_types():
         "t_s": 10.0,
         "cell_temp_c": -17.5,
         "product_temp_c": 40.0,
+        "active_setpoint_c": -18.0,
         "compressor_on": 1,
         "compressor_power_w": 2000.0,
         "door_open": 0,
@@ -68,6 +70,7 @@ def test_publish_record_casts_to_the_model_types():
 
     values, source_ts = asyncio.run(scenario())
     assert values["cell_temp_c"] == -17.5
+    assert values["active_setpoint_c"] == -18.0
     assert values["compressor_on"] is True
     assert values["door_open"] is False
     assert values["label"] == "normal"

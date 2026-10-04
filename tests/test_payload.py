@@ -17,6 +17,7 @@ TS = datetime(2026, 10, 3, 12, 0, 5, tzinfo=UTC)
 VALUES = {
     "cell_temp_c": -17.8,
     "product_temp_c": 12.3,
+    "active_setpoint_c": -18.0,
     "compressor_on": True,
     "compressor_power_w": 2000.0,
     "door_open": False,

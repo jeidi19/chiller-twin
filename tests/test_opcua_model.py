@@ -6,20 +6,18 @@ xfail until build_address_space() is implemented: then remove the ``pytestmark``
 import asyncio
 from pathlib import Path
 
-import pytest
 from asyncua import Server, ua
 
 from simulator.config import load_config
 from simulator.opcua_model import NAMESPACE_URI, build_address_space
 from simulator.simulation import TELEMETRY_FIELDS
 
-pytestmark = pytest.mark.xfail(raises=NotImplementedError, strict=True)
-
 CONFIG = load_config(Path(__file__).parent.parent / "configs" / "default.yaml")
 
 EXPECTED_TYPES = {
     "cell_temp_c": ua.VariantType.Double,
     "product_temp_c": ua.VariantType.Double,
+    "active_setpoint_c": ua.VariantType.Double,
     "compressor_on": ua.VariantType.Boolean,
     "compressor_power_w": ua.VariantType.Double,
     "door_open": ua.VariantType.Boolean,
@@ -96,6 +94,15 @@ def test_telemetry_is_read_only_and_setpoint_writable():
     telemetry, setpoint = asyncio.run(scenario())
     assert not any(telemetry.values()), telemetry
     assert setpoint
+
+
+def test_setpoint_command_is_not_the_active_setpoint():
+    async def scenario():
+        _, _, space = await build()
+        return space.setpoint.nodeid, {n.nodeid for n in space.telemetry.values()}
+
+    command, telemetry = asyncio.run(scenario())
+    assert command not in telemetry
 
 
 def test_setpoint_starts_at_the_configured_value():
